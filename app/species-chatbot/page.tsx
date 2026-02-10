@@ -16,24 +16,46 @@ export default function SpeciesChatbot() {
     }
   };
 
-const handleSubmit = async () => {
-  // TODO: Implement this function
-}
+  const [isTyping, setIsTyping] = useState(false);
 
-return (
+  const handleSubmit = async () => {
+    const trimmed = message.trim();
+    if (!trimmed) return;
+
+    setChatLog((prev) => [...prev, { role: "user", content: trimmed }]);
+    setMessage("");
+    setIsTyping(true);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: trimmed }),
+      });
+
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+
+      const data: any = await res.json();
+      const botMessage = data?.response || "Sorry, I couldn't generate a response.";
+
+      setChatLog((prev) => [...prev, { role: "bot", content: botMessage }]);
+    } catch (error) {
+      console.error(error);
+      setChatLog((prev) => [...prev, { role: "bot", content: "There was an error processing your request." }]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  return (
     <>
       <TypographyH2>Species Chatbot</TypographyH2>
       <div className="mt-4 flex gap-4">
         <div className="mt-4 rounded-lg bg-foreground p-4 text-background">
           <TypographyP>
-            The Species Chatbot is a feature to be implemented that is specialized to answer questions about animals.
-            Ideally, it will be able to provide information on various species, including their habitat, diet,
-            conservation status, and other relevant details. Any unrelated prompts will return a message to the user
-            indicating that the chatbot is specialized for species-related queries only.
-          </TypographyP>
-          <TypographyP>
-            To use the Species Chatbot, simply type your question in the input field below and hit enter. The chatbot
-            will respond with the best available information.
+            Hi, I'm the Species Chatbot! I provide information about various species, including their habitat, diet,
+            conservation status, and other relevant details. To ask me a question, simply type your question in the
+            input field below and hit enter. I will respond with the best available information.
           </TypographyP>
         </div>
       </div>
@@ -57,6 +79,14 @@ return (
                 </div>
               </div>
             ))
+          )}
+          {/* Typing indicator */}
+          {isTyping && (
+            <div className="flex justify-start">
+              <div className="max-w-[75%] animate-pulse whitespace-pre-wrap rounded-2xl border border-border bg-foreground p-3 text-sm text-primary-foreground">
+                Typing...
+              </div>
+            </div>
           )}
         </div>
         {/* Textarea and submission */}

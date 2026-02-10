@@ -82,3 +82,61 @@
       "calt" 1;
   }
 }
+
+@layer components {
+  .animal-speed-wrapper {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .animal-speed-yaxis {
+    flex-shrink: 0;
+  }
+
+  .animal-speed-xlabel {
+    flex-basis: 100%;
+    margin-top: 6px;
+  }
+
+  .animal-speed-center {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .animal-speed-scroll {
+    overflow-x: auto;
+    overflow-y: visible;
+    max-width: 80vw;
+    border-top: 1px solid hsl(var(--border));
+    border-bottom: 1px solid hsl(var(--border));
+  }
+
+  .animal-speed-legend {
+    flex-shrink: 0;
+  }
+
+  /* Axis + legend text */
+  .axis-label {
+    fill: hsl(var(--foreground));
+    font-size: 12px;
+  }
+
+  .axis-title {
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .legend-label {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  /* Dark mode */
+  .dark .axis-label,
+  .dark .legend-label,
+  [data-theme="dark"] .axis-label,
+  [data-theme="dark"] .legend-label {
+    fill: white;
+  }
+}

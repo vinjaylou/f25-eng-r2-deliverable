@@ -1,3 +1,5 @@
+console.log("Auth callback route hit!");
+
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";

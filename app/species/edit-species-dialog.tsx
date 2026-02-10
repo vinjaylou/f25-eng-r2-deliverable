@@ -1,6 +1,5 @@
 "use client";
 
-import { Icons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,159 +16,59 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import { createBrowserSupabaseClient } from "@/lib/client-utils";
+import type { Database } from "@/lib/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState, type BaseSyntheticEvent } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+type Species = Database["public"]["Tables"]["species"]["Row"];
 
-// We use zod (z) to define a schema for the "Add species" form.
-// zod handles validation of the input values with methods like .string(), .nullable(). It also processes the form inputs with .transform() before the inputs are sent to the database.
-
-// Define kingdom enum for use in Zod schema and displaying dropdown options in the form
 const kingdoms = z.enum(["Animalia", "Plantae", "Fungi", "Protista", "Archaea", "Bacteria"]);
 
-// Use Zod to define the shape + requirements of a Species entry; used in form validation
 const speciesSchema = z.object({
-  scientific_name: z
-    .string()
-    .trim()
-    .min(1)
-    .transform((val) => val?.trim()),
+  scientific_name: z.string().trim().min(1),
   common_name: z
     .string()
     .nullable()
-    // Transform empty string or only whitespace input to null before form submission, and trim whitespace otherwise
     .transform((val) => (!val || val.trim() === "" ? null : val.trim())),
   kingdom: kingdoms,
-  total_population: z.number().int().positive().min(1).nullable(),
+  total_population: z.number().int().positive().nullable(),
   image: z
     .string()
     .url()
     .nullable()
-    // Transform empty string or only whitespace input to null before form submission, and trim whitespace otherwise
     .transform((val) => (!val || val.trim() === "" ? null : val.trim())),
   description: z
     .string()
     .nullable()
-    // Transform empty string or only whitespace input to null before form submission, and trim whitespace otherwise
     .transform((val) => (!val || val.trim() === "" ? null : val.trim())),
 });
 
 type FormData = z.infer<typeof speciesSchema>;
 
-// Default values for the form fields.
-/* Because the react-hook-form (RHF) used here is a controlled form (not an uncontrolled form),
-fields that are nullable/not required should explicitly be set to `null` by default.
-Otherwise, they will be `undefined` by default, which will raise warnings because `undefined` conflicts with controlled components.
-All form fields should be set to non-undefined default values.
-Read more here: https://legacy.react-hook-form.com/api/useform/
-*/
-const defaultValues: Partial<FormData> = {
-  scientific_name: "",
-  common_name: null,
-  kingdom: "Animalia",
-  total_population: null,
-  image: null,
-  description: null,
-};
-
-// Wikipedia API response type
-interface WikipediaSummaryResponse {
-  extract?: string;
-  originalimage?: { source: string };
-  thumbnail?: { source: string };
-}
-
-export default function AddSpeciesDialog({ userId }: { userId: string }) {
+export default function EditSpeciesDialog({ species }: { species: Species }) {
   const router = useRouter();
+  const [open, setOpen] = useState(false);
 
-  // Control open/closed state of the dialog
-  const [open, setOpen] = useState<boolean>(false);
-
-  // Instantiate form functionality with React Hook Form, passing in the Zod schema (for validation) and default values
   const form = useForm<FormData>({
     resolver: zodResolver(speciesSchema),
-    defaultValues,
+    defaultValues: {
+      scientific_name: species.scientific_name,
+      common_name: species.common_name,
+      kingdom: species.kingdom,
+      total_population: species.total_population,
+      image: species.image,
+      description: species.description,
+    },
     mode: "onChange",
   });
 
-  // Instantiate Wiki query
-  const [wikiQuery, setWikiQuery] = useState("");
-  const [wikiLoading, setWikiLoading] = useState(false);
-
-  // Fetch Wiki API + autofill
-  const fetchFromWikipedia = async () => {
-    const fallbackQuery =
-      wikiQuery.trim() || form.getValues("scientific_name")?.trim() || form.getValues("common_name")?.trim();
-
-    if (!fallbackQuery) {
-      toast({
-        title: "Missing search term",
-        description: "Please enter a species name or provide one in the form fields.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setWikiLoading(true);
-
-      const title = encodeURIComponent(fallbackQuery);
-      const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${title}`);
-
-      if (!res.ok) {
-        throw new Error("No Wikipedia article found");
-      }
-
-      const data = (await res.json()) as WikipediaSummaryResponse;
-
-      if (!data.extract) {
-        throw new Error("No description available");
-      }
-
-      // Only autofill if fields are empty
-      if (!form.getValues("description")) {
-        form.setValue("description", data.extract);
-      }
-
-      const imageUrl = data.originalimage?.source ?? data.thumbnail?.source ?? null;
-      if (imageUrl && !form.getValues("image")) {
-        form.setValue("image", imageUrl);
-      }
-
-      toast({
-        title: "Wikipedia data loaded",
-        description: "Description and image have been autofilled.",
-      });
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: "No Wikipedia article found",
-        description: "Try a different scientific or common name.",
-        variant: "destructive",
-      });
-    } finally {
-      setWikiLoading(false);
-    }
-  };
-
   const onSubmit = async (input: FormData) => {
-    // The `input` prop contains data that has already been processed by zod. We can now use it in a supabase query
     const supabase = createBrowserSupabaseClient();
-    const { error } = await supabase.from("species").insert([
-      {
-        author: userId,
-        common_name: input.common_name,
-        description: input.description,
-        kingdom: input.kingdom,
-        scientific_name: input.scientific_name,
-        total_population: input.total_population,
-        image: input.image,
-      },
-    ]);
 
-    // Catch and report errors from Supabase and exit the onSubmit function with an early 'return' if an error occurred.
+    const { error } = await supabase.from("species").update(input).eq("id", species.id);
+
     if (error) {
       return toast({
         title: "Something went wrong.",
@@ -178,58 +77,35 @@ export default function AddSpeciesDialog({ userId }: { userId: string }) {
       });
     }
 
-    // Because Supabase errors were caught above, the remainder of the function will only execute upon a successful edit
-
-    // Reset form values to the default (empty) values.
-    // Practically, this line can be removed because router.refresh() also resets the form. However, we left it as a reminder that you should generally consider form "cleanup" after an add/edit operation.
-    form.reset(defaultValues);
-
     setOpen(false);
-
-    // Refresh all server components in the current route. This helps display the newly created species because species are fetched in a server component, species/page.tsx.
-    // Refreshing that server component will display the new species from Supabase
     router.refresh();
 
     return toast({
-      title: "New species added!",
-      description: "Successfully added " + input.scientific_name + ".",
+      title: "Edits saved!",
+      description: `Successfully updated ${species.scientific_name}.`,
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="secondary">
-          <Icons.add className="mr-3 h-5 w-5" />
-          Add Species
+        <Button size="sm" className="bg-green-600 hover:bg-green-700">
+          Edit
         </Button>
       </DialogTrigger>
+
       <DialogContent className="max-h-screen overflow-y-auto sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Add Species</DialogTitle>
+          <DialogTitle>Edit &quot;{species.scientific_name}&quot;</DialogTitle>
           <DialogDescription>
-            Add a new species here. Click &quot;Add Species&quot; below when you&apos;re done.
+            Edit {species.common_name ?? "this species"} profile here. Click &quot;Save Edits&quot; below when
+            you&apos;re done.
           </DialogDescription>
         </DialogHeader>
+
         <Form {...form}>
           <form onSubmit={(e: BaseSyntheticEvent) => void form.handleSubmit(onSubmit)(e)}>
-            {/* Wikipedia search */}
-            <div className="mb-4 flex gap-2">
-              <Input
-                placeholder="Search Wikipedia (scientific or common name)"
-                value={wikiQuery}
-                onChange={(e) => setWikiQuery(e.target.value)}
-              />
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => void fetchFromWikipedia()}
-                disabled={wikiLoading}
-              >
-                {wikiLoading ? "Searching..." : "Search"}
-              </Button>
-            </div>
-            <div className="grid w-full items-center gap-4">
+            <div className="grid gap-4">
               <FormField
                 control={form.control}
                 name="scientific_name"
@@ -352,11 +228,11 @@ export default function AddSpeciesDialog({ userId }: { userId: string }) {
                 }}
               />
               <div className="flex">
-                <Button type="submit" className="ml-1 mr-1 flex-auto">
-                  Add Species
+                <Button type="submit" className="mr-1 flex-auto">
+                  Save Edits
                 </Button>
                 <DialogClose asChild>
-                  <Button type="button" className="ml-1 mr-1 flex-auto" variant="secondary">
+                  <Button type="button" variant="secondary" className="ml-1 flex-auto">
                     Cancel
                   </Button>
                 </DialogClose>
