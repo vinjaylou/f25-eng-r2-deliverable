@@ -40,6 +40,121 @@ Welcome to _Biodiversity Hub_, the webapp for T4SG's Spring 2025 applications!
 
 The project uses Next.js, a React-based framework with significant optimizations. The frontend uses `shadcn/ui`, an open-source library of UI components that are built with Radix primitives and styled with Tailwind CSS. The backend uses Supabase, an open-source Firebase alternative. The entire stack is written in Typescript to provide comprehensive typesafety across both frontend and backend.
 
+This project was developed as part of the Harvard Tech for Social Good application process. A starter codebase was provided; I implemented full-stack features including interactive species dialogs, user-edit functionality, Wikipedia API data population, an OpenAI-powered chatbot integration, an animal speed visualization tool, and formatting/layout configuration.
+
+---
+
+## Live Demo
+
+🔗 **Live Site:** [T4SG Biodiversity Hub](https://f25-eng-r2-deliverable-delta-silk.vercel.app/)
+
+---
+
+## My Contributions
+
+The following features were implemented on top of the provided starter codebase:
+
+- Interactive Species Dialogs (`species-card.tsx`)
+
+  - Built dynamic modal components to display structured species data with responsive layout handling.
+
+- User Edit Functionality (`edit-species-dialog.tsx`)
+
+  - Implemented editable species forms with Supabase-backed persistence and frontend state synchronization.
+
+- Wikipedia API Integration (`add-species-dialog.tsx`)
+
+  - Developed automated species data population using the Wikipedia API with structured parsing and fallback handling.
+
+- OpenAI-Powered Species Chatbot
+
+  - Frontend interface: `app/species-chatbot/page.tsx`
+  - API route: `app/api/chat/route.ts`
+  - Service layer: `lib/services/species-chat.ts`
+  - Designed server-side API routing to securely proxy OpenAI requests and isolate model interaction logic from UI components.
+
+- Animal Speed Visualization Tool (`animal-speed-graph.tsx`)
+
+  - Implemented comparative speed visualization across species entries with dynamic rendering and scrollable layout support.
+
+- Global Styling & Layout Configuration (`globals.css`)
+  - Standardized spacing, typography, and layout structure for improved UI consistency.
+
+---
+
+## Architecture Overview
+
+- Frontend Framework: Next.js (App Router)
+
+- Language: TypeScript for end-to-end type safety
+
+- UI Components: shadcn/ui with Radix primitives and Tailwind CSS
+
+- Backend & Database: Supabase (authentication + persistence)
+
+- API Routing: Next.js server-side API routes (`app/api/*`) to securely handle external API calls
+
+- Service Abstraction: Chatbot model interaction isolated in `lib/services/species-chat.ts` to separate business logic from presentation components
+
+The architecture emphasizes modular component design, separation of concerns, and secure handling of third-party API integrations.
+
+---
+
+## Technical Decisions & Tradeoffs
+
+- Server-Side API Routing for OpenAI Integration: Implemented `app/api/chat/route.ts` to prevent exposure of API keys in the frontend and to manage request formatting server-side.
+
+- TypeScript Across Stack: Used shared type definitions to ensure consistency between Supabase queries and frontend rendering logic.
+
+- Scrollable Speed Visualization (`animal-speed-graph.tsx`): Designed the speed comparison graph to be horizontally scrollable, allowing users to compare all available species without overcrowding the UI or compressing labels. This balances information density with readability.
+
+- Service Layer Abstraction: Separated chatbot logic into `lib/services/species-chat.ts` to improve maintainability and allow future model changes without affecting UI components.
+
+- Dynamic Data Population via Wikipedia API: Implemented structured parsing with fallback handling to ensure incomplete or inconsistent Wikipedia responses do not break the UI.
+
+---
+
+## Future Improvements
+
+- Graph Enhancements (`animal-speed-graph.tsx`)
+
+  - Add horizontal y-value reference lines to improve comparative readability.
+  - Introduce dynamic scaling for extreme outlier values.
+
+- Wikipedia Auto-Fill for Edit Flow (`edit-species-dialog.tsx`)
+
+  - Extend API auto-population to support updating existing species entries, not just creation.
+
+- User Settings & Preferences
+
+  - Implement user-specific display settings (e.g., dark mode, sorting preferences, graph display toggles).
+  - Add role-based permissions for editing vs. viewing access.
+
+- Performance Optimization
+  - Introduce caching for Wikipedia API calls to reduce redundant requests and improve responsiveness.
+
+---
+
+## Screenshots
+
+Web link: [T4SG Biodiversity Hub](https://f25-eng-r2-deliverable-delta-silk.vercel.app/)
+
+### Species Dialog
+
+![Species Dialog](public/screenshots/species-dialog.png)
+
+### Wikipedia Data Auto-Population
+
+![Wiki Auto-Population](public/screenshots/wiki-auto-populate.png)
+
+### Chatbot Interface
+
+![Chatbot Interface](public/screenshots/chatbot-interface.png)
+
+### Speed Visualization
+
+![Speed Visualization](public/screenshots/speed-visualization.png)
+
 ---
 
 ## Setup
