@@ -14,10 +14,6 @@ export default function Home() {
       </TypographyP>
       <TypographyP>To see the species page, log in in the top right!</TypographyP>
       <Separator className="my-4" />
-      <TypographyP>
-        Biodiversity Hub was created as an example webapp for T4SG&apos;s Spring 2024 applications.
-      </TypographyP>
-      <TypographyP>Good luck! We can&apos;t wait to see what you create :)</TypographyP>
     </>
   );
 }
